@@ -66,30 +66,42 @@ else:
 
 @app.route("%sgetdatasets" % route, methods=['GET'])
 def get_datasets():
+	print ("INFO: Got request for dataset")
 	response = jsonify({
 		'datasets': [{'id': 'dataset%d' % n, 'value': x } for n,x in
 					 enumerate(DATAFILES.keys(), 1)],
 	})
 	response.headers.add("Access-Control-Allow-Origin", "*")
+	print ("INFO: Responding to dataset request")
 	return response
 
 @app.route("%sgetcells" % route, methods=['POST'])
 def get_cells():
+	print ("INFO: Got request for cells")
 	data = request.get_json()
 	print (data)
 	if 'dataset' in data and data['dataset'] in DATAFILES:
+		print ("INFO: Fetching cells for dataset: %s" % data['dataset'])
 		cells = h5py.File(DATAFILES[data['dataset']], mode='r', swmr=True)['data']['celltypes']
 		cells = [x.decode('UTF-8') for x in cells[:]]
 		response = jsonify({'cells': cells, 'msg': 'OK'})
 	else:
-		response = jsonify({'msg': 'Error fetching cells'})
+		print ("ERROR: Invalid request for dataset")
+		response = jsonify({'msg': 'Invalid dataset'})
+	print ("INFO: Responding to cell request")
 	response.headers.add("Access-Control-Allow-Origin", "*")
 	return response
 
 @app.route("%smakeradar" % route, methods=['POST'])
 def make_radar():
+	print ("INFO: Got request for makeradar")
 	data = request.get_json()
-	response = jsonify(prep_data(data['dataset'], data['genes']))
+	if 'dataset' in data and 'genes' in data:
+		print ("INFO: Fetching cells for dataset: %s and %d genes" % (data['dataset']), len(data['genes']))
+		response = jsonify(prep_data(data['dataset'], data['genes']))
+	else:
+		print ("ERROR: Invalid request for makeradar")
+		response = jsonify({'msg': 'Invalid dataset or/and genes'})
 	response.headers.add("Access-Control-Allow-Origin", "*")
 	return response
 
