@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, make_response
 import numpy as np
 import pandas as pd
 from io import StringIO
@@ -64,6 +64,13 @@ if __name__ == "__main__":
 else:
 	route = '/'
 
+def cors_prelight_response():
+	response = make_response()
+	response.headers.add("Access-Control-Allow-Origin", "*")
+	response.headers.add('Access-Control-Allow-Headers', "*")
+	response.headers.add('Access-Control-Allow-Methods', "*")
+	return response
+
 @app.route("%sgetdatasets" % route, methods=['GET'])
 def get_datasets():
 	print ("INFO: Got request for dataset")
@@ -75,34 +82,47 @@ def get_datasets():
 	print ("INFO: Responding to dataset request")
 	return response
 
-@app.route("%sgetcells" % route, methods=['POST'])
+@app.route("%sgetcells" % route, methods=['POST', 'OPTIONS'])
 def get_cells():
-	print ("INFO: Got request for cells")
-	data = request.get_json()
-	print (data)
-	if 'dataset' in data and data['dataset'] in DATAFILES:
-		print ("INFO: Fetching cells for dataset: %s" % data['dataset'])
-		cells = h5py.File(DATAFILES[data['dataset']], mode='r', swmr=True)['data']['celltypes']
-		cells = [x.decode('UTF-8') for x in cells[:]]
-		response = jsonify({'cells': cells, 'msg': 'OK'})
+	if request.method == "OPTIONS":
+		print ("INFO: Responding to OPTIONS request method in getcells")	
+		return cors_prelight_response()
+	elif request.method == "POST":
+		print ("INFO: Got request for cells")
+		data = request.get_json()
+		print (data)
+		if 'dataset' in data and data['dataset'] in DATAFILES:
+			print ("INFO: Fetching cells for dataset: %s" % data['dataset'])
+			cells = h5py.File(DATAFILES[data['dataset']], mode='r', swmr=True)['data']['celltypes']
+			cells = [x.decode('UTF-8') for x in cells[:]]
+			response = jsonify({'cells': cells, 'msg': 'OK'})
+		else:
+			print ("ERROR: Invalid request for dataset")
+			response = jsonify({'msg': 'Invalid dataset'})
+		print ("INFO: Responding to cell request")
+		response.headers.add("Access-Control-Allow-Origin", "*")
 	else:
-		print ("ERROR: Invalid request for dataset")
-		response = jsonify({'msg': 'Invalid dataset'})
-	print ("INFO: Responding to cell request")
-	response.headers.add("Access-Control-Allow-Origin", "*")
+		response = jsonify({'msg': 'Request method not supported'})
 	return response
 
-@app.route("%smakeradar" % route, methods=['POST'])
+@app.route("%smakeradar" % route, methods=['POST', 'OPTIONS'])
 def make_radar():
-	print ("INFO: Got request for makeradar")
-	data = request.get_json()
-	if 'dataset' in data and 'genes' in data:
-		print ("INFO: Fetching cells for dataset: %s and %d genes" % (data['dataset']), len(data['genes']))
-		response = jsonify(prep_data(data['dataset'], data['genes']))
+	if request.method == "OPTIONS":
+		print ("INFO: Responding to OPTIONS request method in makeradar")	
+		return cors_prelight_response()
+	elif request.method == "POST":
+		print ("INFO: Got request for makeradar")
+		data = request.get_json()
+		print (data)
+		if 'dataset' in data and 'genes' in data:
+			print ("INFO: Fetching cells for dataset: %s and %d genes" % (data['dataset']), len(data['genes']))
+			response = jsonify(prep_data(data['dataset'], data['genes']))
+		else:
+			print ("ERROR: Invalid request for makeradar")
+			response = jsonify({'msg': 'Invalid dataset or/and genes'})
+		response.headers.add("Access-Control-Allow-Origin", "*")
 	else:
-		print ("ERROR: Invalid request for makeradar")
-		response = jsonify({'msg': 'Invalid dataset or/and genes'})
-	response.headers.add("Access-Control-Allow-Origin", "*")
+		response = jsonify({'msg': 'Request method not supported'})
 	return response
 
 if __name__ == "__main__":
