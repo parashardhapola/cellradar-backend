@@ -66,10 +66,12 @@ else:
 
 @app.route("%sgetdatasets" % route, methods=['GET'])
 def get_datasets():
-	return jsonify({
+    response = jsonify({
         'datasets': [{'id': 'dataset%d' % n, 'value': x } for n,x in
                      enumerate(DATAFILES.keys(), 1)],
     })
+    response.headers.add("Access-Control-Allow-Origin", "*")
+	return response
 
 @app.route("%sgetcells" % route, methods=['POST'])
 def get_cells():
@@ -78,14 +80,18 @@ def get_cells():
 	if 'dataset' in data and data['dataset'] in DATAFILES:
 		cells = h5py.File(DATAFILES[data['dataset']], mode='r', swmr=True)['data']['celltypes']
 		cells = [x.decode('UTF-8') for x in cells[:]]
-		return jsonify({'cells': cells, 'msg': 'OK'})
+		response = jsonify({'cells': cells, 'msg': 'OK'})
 	else:
-		return jsonify({'msg': 'Error fetching cells'})
+		response = jsonify({'msg': 'Error fetching cells'})
+    response.headers.add("Access-Control-Allow-Origin", "*")
+    return response
 
 @app.route("%smakeradar" % route, methods=['POST'])
 def make_radar():
     data = request.get_json()
-    return jsonify(prep_data(data['dataset'], data['genes']))
+    response = jsonify(prep_data(data['dataset'], data['genes']))
+    response.headers.add("Access-Control-Allow-Origin", "*")
+    return response
 
 if __name__ == "__main__":
     app.run(debug=True, port=10751)
