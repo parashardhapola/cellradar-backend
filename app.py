@@ -115,7 +115,7 @@ def make_radar():
 		data = request.get_json()
 		print (data)
 		if 'dataset' in data and 'genes' in data:
-			print ("INFO: Fetching cells for dataset: %s and %d genes" % (data['dataset']), len(data['genes']))
+			print ("INFO: Fetching cells for dataset: %s and %d genes" % (data['dataset'], len(data['genes'])))
 			response = jsonify(prep_data(data['dataset'], data['genes']))
 		else:
 			print ("ERROR: Invalid request for makeradar")
