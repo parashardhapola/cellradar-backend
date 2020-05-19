@@ -62,7 +62,7 @@ app = Flask(__name__)
 if __name__ == "__main__":
 	route = '/cellradar/'
 else:
-	route = '/'
+	route = '/cellradar/'
 
 def cors_prelight_response():
 	response = make_response()
